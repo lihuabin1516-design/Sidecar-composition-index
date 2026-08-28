@@ -1,0 +1,17 @@
+{
+  "schema": "ccpanes.workflow.bundle.v1",
+  "taskId": "task-fixture",
+  "runId": "run-fixture",
+  "outputSummary": {
+    "path": "fixtures/output.json",
+    "sha256": "sha256:f8bc6e2dd93c0342b91902e672c14bea67a0660e8a904fdd6db088a815d188fb"
+  },
+  "observability": {
+    "path": "fixtures/observability.json",
+    "sha256": "sha256:bf6d0cec4f2656dd610a473ed65df56cd5316f2d64181a30b73bdc6a3bc7119b"
+  },
+  "experience": {
+    "path": "fixtures/candidate.json",
+    "sha256": "sha256:b5bcdc79ffacea08e93054f4de8854748983539fb81901926e8d572c3fffc73a"
+  }
+}

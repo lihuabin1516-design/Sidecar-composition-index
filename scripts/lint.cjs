@@ -1,0 +1,2 @@
+const fs=require("node:fs"); const path=require("node:path"); let failed=false;
+function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory()&&!['node_modules','dist','out'].includes(e.name))walk(p);else if(e.isFile()&&/\.(ts|json|md)$/.test(e.name)){const t=fs.readFileSync(p,'utf8');if(!t.endsWith('\n')||/[ \t]+$/m.test(t)||/TODO|TBD|replace-with/.test(t)){console.error(`lint:${p}`);failed=true;}}}} walk(process.cwd()); process.exit(failed?1:0);
