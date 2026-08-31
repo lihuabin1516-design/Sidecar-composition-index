@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 interface ArtifactRef { path: string; sha256: string }
+type BootstrapStatus = "CREATED" | "BOOTSTRAPPING" | "ACTIVE" | "SYSTEM_ERROR" | "BOOTSTRAP_PROTOCOL_ERROR" | "COMPLETED";
 export interface Bundle {
   schema: "ccpanes.workflow.bundle.v1";
   taskId: string;
@@ -10,6 +11,7 @@ export interface Bundle {
   outputSummary?: ArtifactRef;
   observability?: ArtifactRef;
   experience?: ArtifactRef;
+  bootstrapEvidence?: ArtifactRef;
 }
 
 export interface WorkflowIndex {
@@ -20,6 +22,8 @@ export interface WorkflowIndex {
   runId: string;
   links: { outputSummary: string | null; observability: string | null; experienceCandidate: string | null };
   artifacts: Array<{ kind: "output-summary" | "observability-report" | "experience-candidate"; path: string; sha256: string }>;
+  bootstrap?: { status: BootstrapStatus; started: boolean; firstActivityObserved: boolean; handoffRead: boolean; protocolErrorCode: string | null };
+  blockingReasons: string[];
   advisoryOnly: true;
 }
 
@@ -45,8 +49,17 @@ function validateBundle(bundle: Bundle): void {
   if (!bundle.outputSummary && !bundle.observability && !bundle.experience) throw new Error("INVALID_BUNDLE");
 }
 
-function parseArtifact(kind: WorkflowIndex["artifacts"][number]["kind"], value: unknown): { id: string; taskId: string; runId?: string } {
+function parseArtifact(kind: WorkflowIndex["artifacts"][number]["kind"] | "bootstrap-evidence", value: unknown): { id: string; taskId: string; runId?: string } {
   const item = value as Record<string, unknown>;
+  if (kind === "bootstrap-evidence") {
+    if (item.schema !== "ccpanes.bootstrap.evidence.v1" || typeof item.taskId !== "string" || typeof item.runId !== "string" ||
+      !["CREATED", "BOOTSTRAPPING", "ACTIVE", "SYSTEM_ERROR", "BOOTSTRAP_PROTOCOL_ERROR", "COMPLETED"].includes(String(item.status)) ||
+      typeof item.threadIdDigest !== "string" || typeof item.firstActivityObserved !== "boolean" ||
+      typeof item.handoffRead !== "boolean" || (item.protocolErrorCode !== null && typeof item.protocolErrorCode !== "string")) {
+      throw new Error("INVALID_ARTIFACT");
+    }
+    return { id: item.threadIdDigest, taskId: item.taskId, runId: item.runId };
+  }
   if (kind === "output-summary") {
     if (item.artifactType !== "output-summary" || typeof item.summaryId !== "string" || typeof item.taskId !== "string" || typeof item.runId !== "string") throw new Error("INVALID_ARTIFACT");
     return { id: item.summaryId, taskId: item.taskId, runId: item.runId };
@@ -63,6 +76,8 @@ export async function composeBundle(bundle: Bundle, root: string, generatedAt = 
   validateBundle(bundle);
   const links = { outputSummary: null as string | null, observability: null as string | null, experienceCandidate: null as string | null };
   const artifacts: WorkflowIndex["artifacts"] = [];
+  let bootstrap: WorkflowIndex["bootstrap"];
+  const blockingReasons: string[] = [];
   const refs: Array<[keyof typeof links, "output-summary" | "observability-report" | "experience-candidate", ArtifactRef | undefined]> = [
     ["outputSummary", "output-summary", bundle.outputSummary],
     ["observability", "observability-report", bundle.observability],
@@ -82,13 +97,36 @@ export async function composeBundle(bundle: Bundle, root: string, generatedAt = 
     links[key] = identity.id;
     artifacts.push({ kind, path: ref.path.replace(/\\/g, "/"), sha256: actual });
   }
-  const status = links.outputSummary && links.observability && links.experienceCandidate ? "ready" : "partial";
-  return { schema: "ccpanes.workflow.index.v1", generatedAt, status, taskId: bundle.taskId, runId: bundle.runId, links, artifacts, advisoryOnly: true };
+  if (bundle.bootstrapEvidence) {
+    const ref = bundle.bootstrapEvidence;
+    const absolute = targetPath(root, ref.path);
+    let bytes: Buffer;
+    try { bytes = await readFile(absolute); } catch { throw new Error("SOURCE_MISSING"); }
+    if (sha256(bytes) !== ref.sha256) throw new Error("SOURCE_DIGEST_MISMATCH");
+    let parsed: Record<string, unknown>;
+    try { parsed = JSON.parse(bytes.toString("utf8")) as Record<string, unknown>; } catch { throw new Error("INVALID_ARTIFACT"); }
+    const identity = parseArtifact("bootstrap-evidence", parsed);
+    if (identity.taskId !== bundle.taskId || identity.runId !== bundle.runId) throw new Error("IDENTITY_CONFLICT");
+    const started = parsed.firstActivityObserved === true && parsed.handoffRead === true &&
+      (parsed.status === "ACTIVE" || parsed.status === "COMPLETED");
+    bootstrap = {
+      status: parsed.status as BootstrapStatus,
+      started,
+      firstActivityObserved: parsed.firstActivityObserved as boolean,
+      handoffRead: parsed.handoffRead as boolean,
+      protocolErrorCode: parsed.protocolErrorCode as string | null
+    };
+    if (bootstrap.status === "BOOTSTRAP_PROTOCOL_ERROR") {
+      blockingReasons.push(`BOOTSTRAP_PROTOCOL_ERROR:${bootstrap.protocolErrorCode ?? "UNKNOWN"}`);
+    }
+  }
+  const status = blockingReasons.length ? "blocked" : (links.outputSummary && links.observability && links.experienceCandidate ? "ready" : "partial");
+  return { schema: "ccpanes.workflow.index.v1", generatedAt, status, taskId: bundle.taskId, runId: bundle.runId, links, artifacts, ...(bootstrap ? { bootstrap } : {}), blockingReasons, advisoryOnly: true };
 }
 
 export function validateIndex(value: unknown): value is WorkflowIndex {
   const index = value as WorkflowIndex;
-  return Boolean(index && index.schema === "ccpanes.workflow.index.v1" && typeof index.generatedAt === "string" && ["ready", "partial", "blocked", "unknown"].includes(index.status) && id.test(index.taskId) && id.test(index.runId) && index.links && Object.values(index.links).every(value => value === null || typeof value === "string") && Array.isArray(index.artifacts) && index.artifacts.every(item => digest.test(item.sha256) && typeof item.path === "string") && index.advisoryOnly === true);
+  return Boolean(index && index.schema === "ccpanes.workflow.index.v1" && typeof index.generatedAt === "string" && ["ready", "partial", "blocked", "unknown"].includes(index.status) && id.test(index.taskId) && id.test(index.runId) && index.links && Object.values(index.links).every(value => value === null || typeof value === "string") && Array.isArray(index.artifacts) && index.artifacts.every(item => digest.test(item.sha256) && typeof item.path === "string") && Array.isArray(index.blockingReasons) && index.blockingReasons.every(reason => typeof reason === "string") && index.advisoryOnly === true);
 }
 
 export async function writeIndexAtomic(output: string, index: WorkflowIndex, root: string): Promise<void> {

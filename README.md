@@ -48,6 +48,12 @@ Workflow、Worker、Session 或权限决策。
 }
 ```
 
+可选的 `bootstrapEvidence` 引用必须指向 `ccpanes.bootstrap.evidence.v1`。
+它只接受脱敏的 `threadIdDigest`，并把 `CREATED`、`BOOTSTRAPPING`、`ACTIVE`、
+`SYSTEM_ERROR`、`BOOTSTRAP_PROTOCOL_ERROR`、`COMPLETED` 保留为可审计状态。
+`started` 只有在首个 activity 与 `HANDOFF.md` 读取都被观察到时才为 `true`；
+协议错误会使索引为 `blocked`，不会把“thread 已创建”误报为“任务已启动”。
+
 输出 `ccpanes.workflow.index.v1` 的关键字段：
 
 - `status`: `ready`、`partial`、`blocked` 或 `unknown`；

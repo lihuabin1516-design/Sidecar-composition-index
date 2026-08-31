@@ -4,14 +4,14 @@
   "runId": "run-fixture",
   "outputSummary": {
     "path": "fixtures/output.json",
-    "sha256": "sha256:f8bc6e2dd93c0342b91902e672c14bea67a0660e8a904fdd6db088a815d188fb"
+    "sha256": "sha256:b75bb2ce2806dea77c123bcb542bd82c9aad43b7c3d4813f45a7aa94c2e2c979"
   },
   "observability": {
     "path": "fixtures/observability.json",
-    "sha256": "sha256:bf6d0cec4f2656dd610a473ed65df56cd5316f2d64181a30b73bdc6a3bc7119b"
+    "sha256": "sha256:7c974c19411630d2f2bd604153180b1d4f941e206842de343c79c55ee096fa35"
   },
   "experience": {
     "path": "fixtures/candidate.json",
-    "sha256": "sha256:b5bcdc79ffacea08e93054f4de8854748983539fb81901926e8d572c3fffc73a"
+    "sha256": "sha256:206b3c95a48d345e29b0fb69dd557a2e2c84d18f323ba636abbcee44f738a43f"
   }
 }
