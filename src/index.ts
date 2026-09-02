@@ -1,3 +1,5 @@
+export * from "./globalWorkflowIndex";
+
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";

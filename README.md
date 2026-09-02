@@ -62,6 +62,49 @@ Workflow、Worker、Session 或权限决策。
 - `taskId`、`runId`：所有被接受 artifact 的身份必须一致；
 - `advisoryOnly: true`：强制声明这是审查/交接索引而非完成判定。
 
+### Global workflow projection
+
+The package-level `projectGlobalWorkflow` API consumes already-generated,
+sanitized evidence with input schema `ccpanes.workflow.global-input.v1` and
+returns `ccpanes.workflow.global-projection.v1`. It is a pure, read-only
+projection: it does not call MCP, Coordinator, Worker, Session, hooks,
+sidecars, shell commands, network services, or any write-back channel.
+
+The input context chain is fixed and ordered:
+
+```text
+context.md       -> current
+context.prev.md  -> previous
+context.prev2.md -> previous2
+```
+
+Every context generation and every evidence layer retains `source`,
+`observedAt`, `status`, and `authority`. The projection also retains context
+role and digest, bootstrap `state`, inventory availability/runtime version,
+preflight readiness, runtime workflow/session evidence, and
+`advisoryOnly: true` for sidecar evidence. Authority labels are explicit:
+`canonical`, `observed`, `advisory`, `historical`, and `unverified`.
+
+Gate evaluation is fail-closed and ordered:
+
+```text
+MCP_DISCOVERY -> PREFLIGHT -> WORKFLOW -> COMPLETE
+```
+
+Any context or inventory `UNVERIFIED`, `DEGRADED`, `BLOCKED`, or
+`historical` evidence keeps the projection blocked at `MCP_DISCOVERY`.
+Historical bootstrap or preflight evidence keeps it blocked at `PREFLIGHT`;
+historical runtime evidence keeps it blocked at `WORKFLOW`. No
+`UNVERIFIED`, `DEGRADED`, `BLOCKED`, or historical layer produces anything
+marked `ready`. The current observed runtime target is official CC-Panes `0.12.9`;
+`0.12.3` is historical fixture/schema baseline only.
+
+Inputs are rejected when malformed or when strings are outside the controlled
+sanitized format. This includes secrets, bearer/API credentials,
+Authorization values, endpoints, host/port values, raw session identifiers,
+PII, and absolute project paths. Rejected input produces no projection and
+cannot be serialized as output.
+
 ## 状态与错误语义
 
 - `ready`：三个 artifact 都存在、digest 正确、身份一致；
@@ -113,6 +156,15 @@ node dist/src/cli.js compose fixtures/bundle.json `
 - 不使用网络、不调用 shell、不执行输入文件中的命令；
 - digest 只用于完整性和链接校验，不代表文件内容本身已获得 Hooks 授权；
 - 任何失败都以非零进程状态暴露，调用方应把它记录为失败而非继续发布。
+- `projectGlobalWorkflow` 仅接受已经生成且已脱敏的离线 evidence；
+- global projection 使用 `ccpanes.workflow.global-input.v1` ->
+  `ccpanes.workflow.global-projection.v1` 合同；
+- source、observedAt、status、authority 始终保留，sidecar 始终为
+  `advisoryOnly: true`；
+- context 固定为 `context.md` / `context.prev.md` / `context.prev2.md`，
+  roles 分别为 `current` / `previous` / `previous2`；
+- projection 不启动 MCP、Coordinator、Worker、Session、shell 或 network，
+  也不执行上游写回或 live runtime gate。
 
 ## 版本与贡献
 
