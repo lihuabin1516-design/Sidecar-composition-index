@@ -1,5 +1,5 @@
 {
-  "schema": "ccpanes.workflow.bundle.v1",
+  "schema": "paneforge.workflow.bundle.v1",
   "taskId": "task-fixture",
   "runId": "run-fixture",
   "outputSummary": {

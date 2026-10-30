@@ -4,7 +4,7 @@ import { dirname, isAbsolute, relative, resolve } from "node:path";
 
 interface ArtifactRef { path: string; sha256: string }
 export interface Bundle {
-  schema: "ccpanes.workflow.bundle.v1";
+  schema: "paneforge.workflow.bundle.v1";
   taskId: string;
   runId: string;
   outputSummary?: ArtifactRef;
@@ -13,7 +13,7 @@ export interface Bundle {
 }
 
 export interface WorkflowIndex {
-  schema: "ccpanes.workflow.index.v1";
+  schema: "paneforge.workflow.index.v1";
   generatedAt: string;
   status: "ready" | "partial" | "blocked" | "unknown";
   taskId: string;
@@ -38,7 +38,7 @@ function targetPath(root: string, value: string): string {
 }
 
 function validateBundle(bundle: Bundle): void {
-  if (!bundle || bundle.schema !== "ccpanes.workflow.bundle.v1" || !id.test(bundle.taskId) || !id.test(bundle.runId)) throw new Error("INVALID_BUNDLE");
+  if (!bundle || bundle.schema !== "paneforge.workflow.bundle.v1" || !id.test(bundle.taskId) || !id.test(bundle.runId)) throw new Error("INVALID_BUNDLE");
   for (const ref of [bundle.outputSummary, bundle.observability, bundle.experience]) {
     if (ref && (!ref.path || !digest.test(ref.sha256))) throw new Error("INVALID_BUNDLE");
   }
@@ -52,7 +52,7 @@ function parseArtifact(kind: WorkflowIndex["artifacts"][number]["kind"], value: 
     return { id: item.summaryId, taskId: item.taskId, runId: item.runId };
   }
   if (kind === "observability-report") {
-    if (item.schema !== "ccpanes.observability.report.v1" || typeof item.reportId !== "string") throw new Error("INVALID_ARTIFACT");
+    if (item.schema !== "paneforge.observability.report.v1" || typeof item.reportId !== "string") throw new Error("INVALID_ARTIFACT");
     return { id: item.reportId, taskId: item.reportId.replace(/^observability-/, "") };
   }
   if (item.artifactType !== "experience-candidate" || typeof item.candidateId !== "string" || typeof item.taskId !== "string" || item.status !== "candidate") throw new Error("INVALID_ARTIFACT");
@@ -83,12 +83,12 @@ export async function composeBundle(bundle: Bundle, root: string, generatedAt = 
     artifacts.push({ kind, path: ref.path.replace(/\\/g, "/"), sha256: actual });
   }
   const status = links.outputSummary && links.observability && links.experienceCandidate ? "ready" : "partial";
-  return { schema: "ccpanes.workflow.index.v1", generatedAt, status, taskId: bundle.taskId, runId: bundle.runId, links, artifacts, advisoryOnly: true };
+  return { schema: "paneforge.workflow.index.v1", generatedAt, status, taskId: bundle.taskId, runId: bundle.runId, links, artifacts, advisoryOnly: true };
 }
 
 export function validateIndex(value: unknown): value is WorkflowIndex {
   const index = value as WorkflowIndex;
-  return Boolean(index && index.schema === "ccpanes.workflow.index.v1" && typeof index.generatedAt === "string" && ["ready", "partial", "blocked", "unknown"].includes(index.status) && id.test(index.taskId) && id.test(index.runId) && index.links && Object.values(index.links).every(value => value === null || typeof value === "string") && Array.isArray(index.artifacts) && index.artifacts.every(item => digest.test(item.sha256) && typeof item.path === "string") && index.advisoryOnly === true);
+  return Boolean(index && index.schema === "paneforge.workflow.index.v1" && typeof index.generatedAt === "string" && ["ready", "partial", "blocked", "unknown"].includes(index.status) && id.test(index.taskId) && id.test(index.runId) && index.links && Object.values(index.links).every(value => value === null || typeof value === "string") && Array.isArray(index.artifacts) && index.artifacts.every(item => digest.test(item.sha256) && typeof item.path === "string") && index.advisoryOnly === true);
 }
 
 export async function writeIndexAtomic(output: string, index: WorkflowIndex, root: string): Promise<void> {

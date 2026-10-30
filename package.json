@@ -1,11 +1,11 @@
 {
-  "name":"ccpanes-workflow-adapter",
+  "name":"paneforge-workflow-adapter",
   "version":"0.1.0",
   "private":true,
   "license":"MIT",
-  "description":"Read-only composition index for CC-Panes sidecar artifacts.",
+  "description":"Read-only composition index for PaneForge sidecar artifacts.",
   "main":"dist/src/index.js",
-  "bin":{"ccpanes-workflow":"dist/src/cli.js"},
+  "bin":{"paneforge-workflow":"dist/src/cli.js"},
   "scripts":{"build":"tsc","typecheck":"tsc --noEmit","test":"pnpm run build && node --test dist/tests/*.test.js","lint":"node scripts/lint.cjs","smoke:production":"pnpm run build && node dist/src/cli.js compose fixtures/bundle.json --root . --output out/workflow-index.json"},
   "devDependencies":{"@types/node":"^24.10.0","typescript":"^5.9.3"}
 }

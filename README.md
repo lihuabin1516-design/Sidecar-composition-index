@@ -1,6 +1,6 @@
 # Sidecar Composition Index
 
-`ccpanes-workflow-adapter` 是 CC-Panes Companion 的**只读 sidecar composition
+`paneforge-workflow-adapter` 是 PaneForge Companion 的**只读 sidecar composition
 index**。它把已经由各自权威组件生成的 output summary、observability report
 和 experience candidate 通过受限路径、SHA-256 和身份一致性检查，组合成一个
 可供审查、交接和 acceptance-pack 消费的稳定索引。
@@ -10,7 +10,7 @@ Workflow、Worker、Session 或权限决策。
 
 ## 设计目标
 
-1. **只读投影**：不调用 CC-Panes MCP，不启动 Worker，不修改项目和用户配置。
+1. **只读投影**：不调用 PaneForge MCP，不启动 Worker，不修改项目和用户配置。
 2. **可重放**：相同输入文件与 digest 产生相同的 artifact links；时间字段由调用方
    可选注入，便于测试和审计。
 3. **显式不完整性**：缺少可选 experience candidate 时输出 `partial`，缺少必需源、
@@ -24,22 +24,22 @@ Workflow、Worker、Session 或权限决策。
 |---|---|---|
 | 范围、权限、硬门禁、审计、completion gate | Hooks Governance Layer | 只消费其派生 artifact |
 | task/run/evidence/handoff schema | Method Layer | 不定义、不覆盖方法层协议 |
-| Pane/Session/PTY/Worker 状态 | 官方 CC-Panes | 完全不连接运行时 |
-| output summary | `ccpanes-output-sidecar` | 校验并链接 |
-| observability report | `ccpanes-observability-sidecar` | 校验并链接 |
-| experience candidate | `ccpanes-experience-sidecar` | 可选校验并链接 |
+| Pane/Session/PTY/Worker 状态 | 官方 PaneForge | 完全不连接运行时 |
+| output summary | `paneforge-output-sidecar` | 校验并链接 |
+| observability report | `paneforge-observability-sidecar` | 校验并链接 |
+| experience candidate | `paneforge-experience-sidecar` | 可选校验并链接 |
 | Workflow/Worker/Result 状态 | Codex Desktop Companion | 不读取 SQLite、不作状态推断 |
 
-本项目绝不写入 Skill、Hooks、AGENTS.md、Method Layer schema、Codex/CC-Panes
+本项目绝不写入 Skill、Hooks、AGENTS.md、Method Layer schema、Codex/PaneForge
 全局配置、memory pool、远端仓库或用户项目。
 
 ## 输入与输出合同
 
-输入 `ccpanes.workflow.bundle.v1`：
+输入 `paneforge.workflow.bundle.v1`：
 
 ```json
 {
-  "schema": "ccpanes.workflow.bundle.v1",
+  "schema": "paneforge.workflow.bundle.v1",
   "taskId": "task-example",
   "runId": "run-example",
   "outputSummary": { "path": "fixtures/output.json", "sha256": "sha256:<64 hex>" },
@@ -48,7 +48,7 @@ Workflow、Worker、Session 或权限决策。
 }
 ```
 
-输出 `ccpanes.workflow.index.v1` 的关键字段：
+输出 `paneforge.workflow.index.v1` 的关键字段：
 
 - `status`: `ready`、`partial`、`blocked` 或 `unknown`；
 - `links`: 各来源 artifact 的权威 ID；

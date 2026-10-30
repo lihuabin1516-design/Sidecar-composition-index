@@ -1,4 +1,4 @@
-# ccpanes-workflow-adapter
+# paneforge-workflow-adapter
 
 This repository owns a read-only composition index for existing local sidecar
 artifacts. It does not own execution, permissions, evidence, completion, or
