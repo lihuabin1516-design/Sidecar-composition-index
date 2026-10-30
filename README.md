@@ -117,8 +117,8 @@ node dist/src/cli.js compose fixtures/bundle.json `
 是否需要同步 Acceptance Pack。禁止把执行逻辑、权限判断或运行时
 Session 控制塞进本仓库。
 
-## License status
+## License
 
-This repository currently has no `LICENSE` file. The source is not yet offered
-under a general open-source license; do not assume redistribution rights until
-the maintainer publishes an explicit license and completes source attribution.
+Original project materials are licensed under the MIT License; see [`LICENSE`](./LICENSE).
+Third-party dependencies remain under their respective licenses. The npm package
+is marked `private` and is not currently published to the npm registry.

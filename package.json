@@ -2,6 +2,7 @@
   "name":"ccpanes-workflow-adapter",
   "version":"0.1.0",
   "private":true,
+  "license":"MIT",
   "description":"Read-only composition index for CC-Panes sidecar artifacts.",
   "main":"dist/src/index.js",
   "bin":{"ccpanes-workflow":"dist/src/cli.js"},
