@@ -1,4 +1,4 @@
-# CC-Panes Workflow Adapter
+# Sidecar Composition Index
 
 `ccpanes-workflow-adapter` 是 CC-Panes Companion 的**只读 sidecar composition
 index**。它把已经由各自权威组件生成的 output summary、observability report
@@ -22,13 +22,13 @@ Workflow、Worker、Session 或权限决策。
 
 | 能力 | 权威归属 | 本仓库行为 |
 |---|---|---|
-| 范围、权限、硬门禁、审计、completion gate | `D:\cc-pane\tool\repos\hooks` | 只消费其派生 artifact |
-| task/run/evidence/handoff schema | `D:\ccpanes-method-layer` | 不定义、不覆盖方法层协议 |
+| 范围、权限、硬门禁、审计、completion gate | Hooks Governance Layer | 只消费其派生 artifact |
+| task/run/evidence/handoff schema | Method Layer | 不定义、不覆盖方法层协议 |
 | Pane/Session/PTY/Worker 状态 | 官方 CC-Panes | 完全不连接运行时 |
 | output summary | `ccpanes-output-sidecar` | 校验并链接 |
 | observability report | `ccpanes-observability-sidecar` | 校验并链接 |
 | experience candidate | `ccpanes-experience-sidecar` | 可选校验并链接 |
-| Workflow/Worker/Result 状态 | `D:\codex-cc-pane` Companion | 不读取 SQLite、不作状态推断 |
+| Workflow/Worker/Result 状态 | Codex Desktop Companion | 不读取 SQLite、不作状态推断 |
 
 本项目绝不写入 Skill、Hooks、AGENTS.md、Method Layer schema、Codex/CC-Panes
 全局配置、memory pool、远端仓库或用户项目。
@@ -114,5 +114,11 @@ node dist/src/cli.js compose fixtures/bundle.json `
 版本，不静默改变旧版本含义；兼容性增强应补充合同测试和 fixture。
 
 贡献提交应说明：输入/输出合同变化、权威边界影响、隐私影响、测试命令和
-是否需要同步 `ccpanes-acceptance-pack`。禁止把执行逻辑、权限判断或运行时
+是否需要同步 Acceptance Pack。禁止把执行逻辑、权限判断或运行时
 Session 控制塞进本仓库。
+
+## License status
+
+This repository currently has no `LICENSE` file. The source is not yet offered
+under a general open-source license; do not assume redistribution rights until
+the maintainer publishes an explicit license and completes source attribution.
